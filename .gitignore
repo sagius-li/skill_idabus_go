@@ -1,0 +1,6 @@
+.env
+.oauth-token-cache.json
+*.token.json
+*.response.json
+__pycache__/
+*.pyc

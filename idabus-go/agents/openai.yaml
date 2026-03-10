@@ -1,0 +1,4 @@
+interface:
+  display_name: "Idabus Go"
+  short_description: "Access Idabus APIs with OAuth2"
+  default_prompt: "Use $idabus-go to authenticate to an Idabus API with OAuth2 and fetch a resource by ID."
