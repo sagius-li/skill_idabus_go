@@ -38,6 +38,24 @@ Run:
 python3 scripts/resource.py --endpoint-name get-resource --path-param resource_id=12345
 ```
 
+With query parameters:
+
+```bash
+python3 scripts/resource.py --endpoint-name search-resources --query status=active --query limit=10
+```
+
+With an inline JSON body:
+
+```bash
+python3 scripts/resource.py --method POST --path /resources --json '{"name":"demo","enabled":true}'
+```
+
+With a request body file:
+
+```bash
+python3 scripts/resource.py --method PATCH --endpoint-name update-resource --path-param resource_id=12345 --body-file payload.json
+```
+
 Optional flags:
 
 - `--output path/to/resource.json` to save the raw JSON payload
