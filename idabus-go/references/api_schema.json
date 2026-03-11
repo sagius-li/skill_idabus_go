@@ -1,0 +1,65 @@
+{
+  "components": {
+    "schemas": {
+      "GetObjectSpecification": {
+        "type": "object",
+        "properties": {
+          "attributes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "An optional list of attribute names that should be included in the resources (\"objectid\" and \"objecttype\" are always\r\nincluded). If null, all non-computed attributes are included. If this is [\"*\"], all attributes including computed\r\nones are included.",
+            "nullable": true
+          },
+          "resolveReferences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolveReferenceSpecification"
+            },
+            "description": "An optional list of OCG.DataService.DTO.ResolveReferenceSpecification objects specifying references to be resolved.",
+            "nullable": true
+          },
+          "queryFormat": {
+            "enum": [
+              "Standard",
+              "IncludeNull",
+              "Verbose"
+            ],
+            "type": "string",
+            "description": "The OCG.DataService.DTO.GetObjectSpecification.QueryFormat for the attributes to determine if null values should be returned."
+          },
+          "includeEventArchive": {
+            "type": "boolean",
+            "description": "Indicates if the event archive should be consulted to fetch this item."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Specifies options for getting a resource."
+      },
+      "ResolveReferenceSpecification": {
+        "required": [
+          "attributes",
+          "reference"
+        ],
+        "type": "object",
+        "properties": {
+          "reference": {
+            "minLength": 1,
+            "type": "string",
+            "description": "The name of the reference attribute to resolve."
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The names of the attributes that should be included in the referenced resource."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Specifies how a reference should be resolved in a search result."
+      }
+    }
+  }
+}

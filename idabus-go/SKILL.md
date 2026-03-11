@@ -7,7 +7,7 @@ description: Connect to an Idabus web API through an OAuth2-compliant identity p
 
 ## Overview
 
-Authenticate to an Idabus API with OAuth2 and send generic authenticated HTTP requests. Use `references/api_spec.json` as the source of truth for endpoint names, parameter names, and endpoint descriptions before calling the API.
+Authenticate to an Idabus API with OAuth2 and send generic authenticated HTTP requests. Use `references/api_spec.json` as the source of truth for endpoint names, parameter names, endpoint descriptions, and request body metadata before calling the API.
 
 ## Quick Start
 
@@ -17,7 +17,9 @@ Authenticate to an Idabus API with OAuth2 and send generic authenticated HTTP re
 4. For `OAUTH_FLOW_TYPE=client_credentials`, set `OAUTH_CLIENT_SECRET`.
 5. Confirm that the identity provider supports the configured flow type and scope.
 6. Review `references/api_spec.json` to identify the endpoint name, method, path template, and parameters to send.
-7. Run `python3 scripts/resource.py --endpoint-name <name>` or `python3 scripts/resource.py --method GET --path /example`.
+7. If the endpoint defines a request body, build the JSON body before sending the request.
+8. If `request_body.schema_ref` is present, load the referenced schema from `references/api_schema.json` and use it to shape the body payload.
+9. Run `python3 scripts/resource.py --endpoint-name <name>` or `python3 scripts/resource.py --method GET --path /example`.
 
 ## Configure Local Secrets
 
@@ -31,6 +33,14 @@ Authenticate to an Idabus API with OAuth2 and send generic authenticated HTTP re
 - Read `references/api_setup.md` when wiring the authorization endpoint, token endpoint, scope, or base API URL.
 
 ## Call The API
+
+Before sending a request:
+
+- Resolve the endpoint from `references/api_spec.json`.
+- Gather path parameters, query parameters, headers, and request body requirements from that endpoint entry.
+- If the endpoint has a `request_body`, construct a valid JSON body first instead of sending an ad hoc payload.
+- If `request_body.schema_ref` points into `references/api_schema.json`, load that schema and use it to decide which fields, value types, arrays, and nested objects belong in the body.
+- Treat `references/api_schema.json` as the source of truth for body structure when a schema reference is present.
 
 Run:
 
@@ -71,6 +81,8 @@ The request script:
 - reuses a cached OAuth2 access token when one is still valid
 - acquires a new token with either client credentials or interactive browser login
 - resolves endpoint definitions from `references/api_spec.json` when `--endpoint-name` is used
+- expects the caller to build the request body from the endpoint metadata before invoking the request
+- expects `request_body.schema_ref` to be resolved against `references/api_schema.json` when present
 - applies path, query, header, and body inputs to the request
 - calls the API with a bearer token
 - prints JSON to stdout and optionally saves it to disk
@@ -92,6 +104,7 @@ The request script:
 
 - `references/api_spec.json` contains the endpoint catalog for this skill. Read it before calling the API.
 - Each endpoint entry should include the endpoint name, method, path, parameter names, and a short description.
+- If an endpoint includes `request_body.schema_ref`, load the referenced schema from `references/api_schema.json` and use it to build the request body before sending the API call.
 - Prefer `--endpoint-name` over hardcoded paths when the endpoint exists in the specification.
 
 ## Resources
@@ -99,4 +112,5 @@ The request script:
 - `scripts/auth.py`: acquire an OAuth2 access token without printing secrets
 - `scripts/resource.py`: send authenticated GET, POST, PUT, PATCH, or DELETE requests and print raw JSON
 - `references/api_spec.json`: endpoint catalog with endpoint names, parameters, and descriptions
+- `references/api_schema.json`: local JSON schema bundle for request bodies referenced from `api_spec.json`
 - `references/api_setup.md`: fill in the authorization endpoint, token endpoint, scope, base API URL, and spec maintenance notes

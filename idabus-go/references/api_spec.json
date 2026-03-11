@@ -32,7 +32,7 @@
       "request_body": {
         "description": "Optionally specifies resource options.",
         "content_type": "application/json",
-        "schema_ref": "#/components/schemas/GetObjectSpecification"
+        "schema_ref": "references/api_schema.json#/components/schemas/GetObjectSpecification"
       },
       "response_description": "Returns the requested resource as a JSON object. Returns 404 if not found.",
       "security": {
