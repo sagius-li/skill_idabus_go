@@ -5,19 +5,42 @@
   },
   "endpoints": [
     {
-      "name": "get-resource",
-      "method": "GET",
-      "path": "/resources/{resource_id}",
-      "description": "Fetch one resource by its identifier",
+      "name": "get-resource-by-id",
+      "method": "POST",
+      "path": "/Resources/{id}",
+      "description": "Gets the resource with the given id.",
       "path_parameters": [
         {
-          "name": "resource_id",
-          "description": "Unique resource identifier"
+          "name": "id",
+          "description": "The object ID of the resource to fetch."
         }
       ],
-      "query_parameters": [],
-      "request_body": null,
-      "response_description": "JSON payload for the requested resource"
+      "query_parameters": [
+        {
+          "name": "SimulationSessionId",
+          "description": "The ID of the simulation session.",
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "name": "SimulationActorId",
+          "description": "An optional object ID of the simulated actor. The logged in user is taken if not specified.",
+          "type": "string",
+          "format": "uuid"
+        }
+      ],
+      "request_body": {
+        "description": "Optionally specifies resource options.",
+        "content_type": "application/json",
+        "schema_ref": "#/components/schemas/GetObjectSpecification"
+      },
+      "response_description": "Returns the requested resource as a JSON object. Returns 404 if not found.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
     }
   ]
 }
