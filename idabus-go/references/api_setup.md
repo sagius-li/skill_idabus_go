@@ -18,14 +18,16 @@ When `OAUTH_FLOW_TYPE=authorization_code`, the script opens the current browser 
 ## Required API Values
 
 - `IDABUS_API_BASE_URL`: base URL for the Idabus API
-- `IDABUS_RESOURCE_PATH_TEMPLATE`: relative path for single-resource lookup; keep `{resource_id}` in the template
 
 ## OpenAPI / Swagger Inputs To Capture
 
-Record these values from the API's OpenAPI document before first production use:
+Record these values in `references/api_spec.json` from the API's OpenAPI document before first production use:
 
 - resource lookup path
 - path parameter name for the resource ID
+- endpoint name to use from the skill
+- query parameter names and meanings
+- request body shape for POST, PUT, and PATCH operations
 - expected success response shape
 - authentication scheme and scope name
 - error response codes for unauthorized, forbidden, and not found
@@ -50,3 +52,14 @@ Common auth failures:
 - For browser-based login, the script prefers a valid cached token, then refresh token, then a fresh browser sign-in.
 
 If the provider does not support either configured grant, the auth script must be extended in a future revision.
+
+## API Specification File
+
+- Keep `references/api_spec.json` up to date with the API endpoints this skill should call.
+- Each endpoint entry should at minimum define:
+  - `name`
+  - `method`
+  - `path`
+  - `description`
+  - any path/query/body parameter names needed for the request
+- `scripts/resource.py` can resolve an endpoint by its `name`, then apply `--path-param`, `--query`, and body inputs at runtime.

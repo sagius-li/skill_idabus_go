@@ -1,0 +1,23 @@
+{
+  "service": {
+    "name": "Idabus API",
+    "description": "REST API for accessing Idabus resources"
+  },
+  "endpoints": [
+    {
+      "name": "get-resource",
+      "method": "GET",
+      "path": "/resources/{resource_id}",
+      "description": "Fetch one resource by its identifier",
+      "path_parameters": [
+        {
+          "name": "resource_id",
+          "description": "Unique resource identifier"
+        }
+      ],
+      "query_parameters": [],
+      "request_body": null,
+      "response_description": "JSON payload for the requested resource"
+    }
+  ]
+}
