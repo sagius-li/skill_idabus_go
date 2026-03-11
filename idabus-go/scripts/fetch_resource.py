@@ -16,7 +16,7 @@ from env_utils import ConfigError, default_env_path, get_int_env, load_dotenv, r
 def build_resource_url(resource_id: str) -> str:
     base_url = require_env("IDABUS_API_BASE_URL").rstrip("/")
     template = os.getenv("IDABUS_RESOURCE_PATH_TEMPLATE", "/resources/{resource_id}")
-    resource_path = template.format(resource_id=parse.quote(resource_id, safe=""))
+    resource_path = template.format(id=parse.quote(resource_id, safe=""))
     return f"{base_url}{resource_path}"
 
 
