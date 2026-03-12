@@ -37,6 +37,30 @@
         "additionalProperties": false,
         "description": "Specifies options for getting a resource."
       },
+      "OrderBySpecification": {
+        "required": [
+          "attribute",
+          "order"
+        ],
+        "type": "object",
+        "properties": {
+          "attribute": {
+            "minLength": 1,
+            "type": "string",
+            "description": "The attribute to order by."
+          },
+          "order": {
+            "enum": [
+              "Ascending",
+              "Descending"
+            ],
+            "type": "string",
+            "description": "Specifies whether the ordering should be ascending (\"ASC\") or descending (\"DESC\")."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Specifies a sorting criterion."
+      },
       "ResolveReferenceSpecification": {
         "required": [
           "attributes",
@@ -59,6 +83,70 @@
         },
         "additionalProperties": false,
         "description": "Specifies how a reference should be resolved in a search result."
+      },
+      "SearchSpecificationWithXPathQuery": {
+        "type": "object",
+        "properties": {
+          "xPath": {
+            "type": "string",
+            "description": "An optional XPath query.",
+            "nullable": true
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "An optional list of attribute names that should be included in the resources (\"objectid\" and \"objecttype\" are always\r\nincluded). If null, all attributes are included. The setter converts all attributes into lower case.",
+            "nullable": true
+          },
+          "queryFormat": {
+            "enum": [
+              "Standard",
+              "IncludeNull",
+              "Verbose"
+            ],
+            "type": "string",
+            "description": "The OCG.DataService.DTO.SearchSpecification.QueryFormat for the attributes to determine if null values should be returned."
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "An integer restricting the number of results to return.",
+            "format": "int32"
+          },
+          "orderBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderBySpecification"
+              }
+            ],
+            "description": "An optional OCG.DataService.DTO.OrderBySpecification specifying the order.\r\nMay be ignored if the query cannot be ordered.",
+            "nullable": true
+          },
+          "includeEventArchive": {
+            "type": "boolean",
+            "description": "Indicates if results from the event archive should be included."
+          },
+          "resolveReferences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolveReferenceSpecification"
+            },
+            "description": "An optional list of OCG.DataService.DTO.ResolveReferenceSpecification objects specifying references to be resolved.\r\nIf one of the objects has specified \"*\" as reference attribute, only that one is taken and the other ones are skipped.",
+            "nullable": true
+          },
+          "includeCount": {
+            "enum": [
+              "None",
+              "FastOnly",
+              "Forced"
+            ],
+            "type": "string",
+            "description": "Specifies whether a count should be included."
+          }
+        },
+        "additionalProperties": false,
+        "description": "A OCG.DataService.DTO.SearchSpecification with an optional XPath query."
       }
     }
   }

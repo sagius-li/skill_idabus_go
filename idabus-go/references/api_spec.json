@@ -41,6 +41,43 @@
           "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
         ]
       }
+    },
+    {
+      "name": "get-resource-by-xpath",
+      "method": "POST",
+      "path": "/Resources/search",
+      "description": "Searches for resources via an XPath query based on a search specification.",
+      "query_parameters": [
+        {
+          "name": "xPathQuery",
+          "description": "The XPath string.",
+          "type": "string"
+        },
+        {
+          "name": "SimulationSessionId",
+          "description": "The ID of the simulation session.",
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "name": "SimulationActorId",
+          "description": "An optional object ID of the simulated actor. The logged in user is taken if not specified.",
+          "type": "string",
+          "format": "uuid"
+        }
+      ],
+      "request_body": {
+        "description": "The configuration parameter for this search.",
+        "content_type": "application/json",
+        "schema_ref": "references/api_schema.json#/components/schemas/SearchSpecificationWithXPathQuery"
+      },
+      "response_description": "Returns a paged list of matching resources, including an optional continuation token and total count.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
     }
   ]
 }
