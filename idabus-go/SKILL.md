@@ -62,11 +62,22 @@ When the task is to discover schema metadata and the API exposes schema resource
 - Read `references/api_spec.json` before choosing an endpoint name or parameter set.
 - Read `references/api_setup.md` when wiring the authorization endpoint, token endpoint, scope, or base API URL.
 
+## Simulation Sessions
+
+- Unless the user explicitly says not to, execute mutating actions such as create, update, and delete inside a simulation session.
+- For a task that includes any simulated action, use the same simulation session for every request in that task, including read requests, so all requests share the same simulated state and data.
+- Before the first request of that task, create a simulation session with `create-simulation-session`.
+- Pass the created simulation session ID on every request in the task by using the endpoint parameter name defined in `references/api_spec.json`.
+- After the task finishes, delete the simulation session with `delete-simulation-session`.
+- If a simulation session is created, make deletion mandatory even if a later request fails; treat cleanup as the final step of the task.
+
 ## Call The API
 
 Before sending a request:
 
 - Resolve the endpoint from `references/api_spec.json`.
+- Decide whether the task needs a simulation session before sending the first request.
+- If the task contains any mutating action and the user did not explicitly opt out, create one simulation session first and reuse it for every request in the task.
 - Gather path parameters, query parameters, headers, and request body requirements from that endpoint entry.
 - If the endpoint has a `request_body`, construct a valid JSON body first instead of sending an ad hoc payload.
 - For XPath-backed search endpoints, check the request body schema for an XPath field such as `xPath` before deciding how to send the query.
@@ -79,6 +90,8 @@ Before sending a request:
 - If `request_body.schema_ref` points into `references/api_schema.json`, load that schema and use it to decide which fields, value types, arrays, and nested objects belong in the body.
 - Treat `references/api_schema.json` as the source of truth for body structure when a schema reference is present.
 - For resource searches that use XPath, read `references/idabus_xpath_dialect.md` first and use that syntax in the request body whenever possible.
+- If a simulation session is active for the task, include its ID on reads and writes alike until cleanup is complete.
+- After the task's API work is complete, delete any simulation session that was created for that task.
 
 Run:
 

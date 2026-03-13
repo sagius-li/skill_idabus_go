@@ -233,6 +233,77 @@
           "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
         ]
       }
+    },
+    {
+      "name": "get-simulation-sessions",
+      "method": "GET",
+      "path": "/simulation",
+      "description": "Gets all simulation sessions.",
+      "response_description": "Returns an array of simulation sessions as generic JSON objects.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
+    },
+    {
+      "name": "create-simulation-session",
+      "method": "POST",
+      "path": "/simulation",
+      "description": "Creates a new simulation session and returns its ID.",
+      "query_parameters": [
+        {
+          "name": "displayName",
+          "description": "An optional display name for the simulation session.",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "description": "An optional description for the simulation session.",
+          "type": "string"
+        },
+        {
+          "name": "comment",
+          "description": "An optional comment for the request.",
+          "type": "string"
+        }
+      ],
+      "response_description": "Returns the created simulation session ID as a UUID string.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
+    },
+    {
+      "name": "delete-simulation-session",
+      "method": "DELETE",
+      "path": "/simulation/{simulationSessionId}",
+      "description": "Deletes a simulation session and all associated resources and events.",
+      "path_parameters": [
+        {
+          "name": "simulationSessionId",
+          "description": "The ID of the simulation session to delete.",
+          "type": "string",
+          "format": "uuid"
+        }
+      ],
+      "query_parameters": [
+        {
+          "name": "comment",
+          "description": "An optional comment for the request.",
+          "type": "string"
+        }
+      ],
+      "response_description": "Returns a boolean indicating whether the simulation session was successfully deleted.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
     }
   ]
 }
