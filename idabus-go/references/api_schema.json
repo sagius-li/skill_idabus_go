@@ -147,6 +147,16 @@
         },
         "additionalProperties": false,
         "description": "A OCG.DataService.DTO.SearchSpecification with an optional XPath query."
+      },
+      "ResourceDto": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Encapsulates a resource DTO for resource creation. The payload is an arbitrary JSON object whose properties map to resource attributes."
+      },
+      "ResourceAttributeAssignments": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Encapsulates resource updates as attribute/value assignments for PATCH /Resources/{id}."
       }
     }
   }

@@ -78,6 +78,161 @@
           "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
         ]
       }
+    },
+    {
+      "name": "create-resource",
+      "method": "POST",
+      "path": "/Resources",
+      "description": "Creates a new resource.",
+      "query_parameters": [
+        {
+          "name": "Attributes",
+          "description": "An optional list of attribute names that should be included in the resource (\"objectid\" and \"objecttype\" are always included). If null, all non-computed attributes are included. If this is [\"*\"], all attributes including computed ones are included.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "ResolveReferences",
+          "description": "An optional list of ResolveReferenceSpecification objects specifying references to be resolved.",
+          "type": "array",
+          "items": {
+            "schema_ref": "references/api_schema.json#/components/schemas/ResolveReferenceSpecification"
+          }
+        },
+        {
+          "name": "QueryFormat",
+          "description": "Determines if null values should be returned for the selected attributes.",
+          "type": "string",
+          "enum": ["Standard", "IncludeNull", "Verbose"]
+        },
+        {
+          "name": "IncludeEventArchive",
+          "description": "Indicates if the event archive should be consulted to fetch this item.",
+          "type": "boolean"
+        },
+        {
+          "name": "comment",
+          "description": "An optional comment for the request. May be required for approvals.",
+          "type": "string"
+        },
+        {
+          "name": "skipInvalidReferences",
+          "description": "If true, invalid references are skipped instead of failing the request.",
+          "type": "boolean"
+        },
+        {
+          "name": "SimulationSessionId",
+          "description": "The ID of the simulation session.",
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "name": "SimulationActorId",
+          "description": "An optional object ID of the simulated actor. The logged in user is taken if not specified.",
+          "type": "string",
+          "format": "uuid"
+        }
+      ],
+      "request_body": {
+        "description": "The resource to be created. If the resource contains no object ID, a fresh ID is generated automatically. If the prefix of the object ID does not match the object type, it is corrected accordingly.",
+        "content_type": "application/json",
+        "schema_ref": "references/api_schema.json#/components/schemas/ResourceDto"
+      },
+      "response_description": "Returns the created resource with attributes depending on the provided options. May also return 202 Accepted, 400 Bad Request, or 409 Conflict.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
+    },
+    {
+      "name": "update-resource",
+      "method": "PATCH",
+      "path": "/Resources/{id}",
+      "description": "Updates the resource with the given id.",
+      "path_parameters": [
+        {
+          "name": "id",
+          "description": "The ID of the resource to be updated."
+        }
+      ],
+      "query_parameters": [
+        {
+          "name": "comment",
+          "description": "An optional comment for the request. May be required for approvals.",
+          "type": "string"
+        },
+        {
+          "name": "skipInvalidReferences",
+          "description": "If true, invalid references are skipped instead of failing the request.",
+          "type": "boolean"
+        },
+        {
+          "name": "SimulationSessionId",
+          "description": "The ID of the simulation session.",
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "name": "SimulationActorId",
+          "description": "An optional object ID of the simulated actor. The logged in user is taken if not specified.",
+          "type": "string",
+          "format": "uuid"
+        }
+      ],
+      "request_body": {
+        "description": "The updates specified as attribute/value assignments.",
+        "content_type": "application/json",
+        "schema_ref": "references/api_schema.json#/components/schemas/ResourceAttributeAssignments"
+      },
+      "response_description": "Returns 200 OK on success. May also return 202 Accepted or 400 Bad Request.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
+    },
+    {
+      "name": "delete-resource",
+      "method": "DELETE",
+      "path": "/Resources/{id}",
+      "description": "Deletes a resource.",
+      "path_parameters": [
+        {
+          "name": "id",
+          "description": "The ID of the resource to be deleted."
+        }
+      ],
+      "query_parameters": [
+        {
+          "name": "comment",
+          "description": "An optional comment for the request. May be required for approvals.",
+          "type": "string"
+        },
+        {
+          "name": "SimulationSessionId",
+          "description": "The ID of the simulation session.",
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "name": "SimulationActorId",
+          "description": "An optional object ID of the simulated actor. The logged in user is taken if not specified.",
+          "type": "string",
+          "format": "uuid"
+        }
+      ],
+      "response_description": "Returns a boolean indicating if the resource existed and was successfully deleted. May also return 202 Accepted.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
     }
   ]
 }

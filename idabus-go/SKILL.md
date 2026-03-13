@@ -23,6 +23,17 @@ Before sending any XPath-backed search request:
 
 Anti-pattern: do not default to `xPathQuery` in query parameters just because the endpoint spec lists that parameter. If the same endpoint also accepts XPath in the request body, body transport wins.
 
+## Schema Discovery With XPath
+
+When the task is to discover schema metadata and the API exposes schema resources, XPath search may be used instead of full schema reads.
+
+- For object type discovery, use `/objecttypedescription[name='...' or displayname='...']`.
+- For attribute discovery, use `/attributetypedescription[name='...' or displayname='...']`.
+- For binding discovery between an object type and an attribute, use `/bindingdescription[boundobjecttype='...' and boundattributetype='...']`.
+- `boundobjecttype` and `boundattributetype` are reference attributes, so their values must be object IDs, not display names.
+- When a binding lookup starts from names instead of IDs, first resolve the object type and attribute type IDs, then query the binding.
+- Keep schema-discovery reads narrow by requesting only the fields needed for the next step.
+
 ## Quick Start
 
 1. Copy `.env.example` to `.env`.
