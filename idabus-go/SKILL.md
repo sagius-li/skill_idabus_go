@@ -7,7 +7,11 @@ description: Connect to an Idabus web API through an OAuth2-compliant identity p
 
 ## Overview
 
-Authenticate to an Idabus API with OAuth2 and send generic authenticated HTTP requests. Use `references/api_spec.json` as the source of truth for endpoint names, parameter names, endpoint descriptions, and request body metadata before calling the API. For resource searches that use XPath, consult `references/idabus_xpath_dialect.md` before writing the query and prefer sending the XPath in the request body whenever the endpoint body supports an XPath field.
+Authenticate to an Idabus API with OAuth2 and send generic authenticated HTTP requests. Use `references/api_spec.json` as the source of truth for endpoint names, parameter names, endpoint descriptions, and request body metadata before calling the API.
+
+When you need information about different object types and their purpose, consult `references/object_types_and_attributes.md`.
+
+For resource searches that use XPath, consult `references/idabus_xpath_dialect.md` before writing the query and prefer sending the XPath in the request body whenever the endpoint body supports an XPath field.
 
 ## XPath Search Checklist
 
