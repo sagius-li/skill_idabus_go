@@ -235,6 +235,77 @@
       }
     },
     {
+      "name": "execute-function-expression",
+      "method": "POST",
+      "path": "/Internal/executeexpression",
+      "description": "Executes the given expression and returns the result as a string in JSON format. Requires system permission ExpressionEvaluation.",
+      "query_parameters": [
+        {
+          "name": "allowFunctionExpressions",
+          "description": "Whether function expressions are allowed during evaluation.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "name": "allowXPath",
+          "description": "Whether XPath expressions are allowed during evaluation.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "name": "allowInterpolatedStrings",
+          "description": "Whether interpolated strings are allowed during evaluation.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "name": "interpretSemicolonAsListSeparator",
+          "description": "Whether semicolons should be interpreted as list separators.",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "request_body": {
+        "description": "The expression evaluation context.",
+        "content_type": "application/json",
+        "schema_ref": "references/api_schema.json#/components/schemas/ExecuteExpressionBody"
+      },
+      "response_description": "Returns the evaluated result as a string. The API advertises both text/plain and application/json string responses.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
+    },
+    {
+      "name": "check-permissions",
+      "method": "POST",
+      "path": "/Internal/checkpermissions",
+      "description": "Checks if the specified operation is permitted for the given requestor and returns details about which permission rules allow the operation. Requires system permission ReadSystemInfo.",
+      "query_parameters": [
+        {
+          "name": "requestorId",
+          "description": "The ID of the user requesting the operation.",
+          "type": "string",
+          "format": "uuid",
+          "required": true
+        }
+      ],
+      "request_body": {
+        "description": "The operation to check permissions for, including the target, requested permission, and any resource or attribute changes relevant to the operation type.",
+        "content_type": "application/json",
+        "schema_ref": "references/api_schema.json#/components/schemas/AuthorizedOperation"
+      },
+      "response_description": "Returns an OperationPermissionResponse on success. May also return ProblemDetails for 400 Bad Request or 404 Not Found.",
+      "security": {
+        "scheme": "aad-jwt",
+        "scopes": [
+          "api://0bbb05a6-f81f-430d-816e-bfab2fafd110/idasagius-api-lab/General"
+        ]
+      }
+    },
+    {
       "name": "get-simulation-sessions",
       "method": "GET",
       "path": "/simulation",

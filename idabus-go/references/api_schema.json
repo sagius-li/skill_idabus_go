@@ -148,6 +148,212 @@
         "additionalProperties": false,
         "description": "A OCG.DataService.DTO.SearchSpecification with an optional XPath query."
       },
+      "StringStringKeyValuePair": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "A string-to-string key/value pair."
+      },
+      "ExecuteExpressionBody": {
+        "required": [
+          "expression"
+        ],
+        "type": "object",
+        "properties": {
+          "expression": {
+            "minLength": 1,
+            "type": "string",
+            "description": "The expression to be evaluated."
+          },
+          "workflowDataExpressions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StringStringKeyValuePair"
+            },
+            "description": "Optional workflow data expressions.",
+            "nullable": true
+          },
+          "xPathQueries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StringStringKeyValuePair"
+            },
+            "description": "Optional XPath queries.",
+            "nullable": true
+          },
+          "requestor": {
+            "type": "string",
+            "description": "The object ID for [//requestor].",
+            "format": "uuid",
+            "nullable": true
+          },
+          "target": {
+            "type": "string",
+            "description": "The object ID for [//target].",
+            "format": "uuid",
+            "nullable": true
+          },
+          "delta": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Optional contents for [//delta].",
+            "nullable": true
+          },
+          "deltaBeforeChange": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Optional contents for [//deltaBeforeChange].",
+            "nullable": true
+          },
+          "variableContext": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "description": "Optional mapping from $-variables to values.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for evaluating an internal expression."
+      },
+      "AuthorizedOperation": {
+        "type": "object",
+        "properties": {
+          "targetId": {
+            "type": "string",
+            "description": "The object ID of the target resource. Ignored for Create operations.",
+            "format": "uuid",
+            "nullable": true
+          },
+          "requestedPermission": {
+            "enum": [
+              "Add",
+              "Create",
+              "Modify",
+              "Delete",
+              "Read",
+              "Remove"
+            ],
+            "type": "string",
+            "description": "The permission being requested."
+          },
+          "resourceToCreate": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "For Create operations, the resource to be created.",
+            "nullable": true
+          },
+          "attributeAssignments": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "For Modify, Add, or Remove operations, the requested attribute assignments.",
+            "nullable": true
+          },
+          "multivalueInsertions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {},
+              "nullable": true
+            },
+            "description": "For Modify, Add, or Remove operations, values to add to multivalued attributes.",
+            "nullable": true
+          },
+          "multivalueRemovals": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {},
+              "nullable": true
+            },
+            "description": "For Modify, Add, or Remove operations, values to remove from multivalued attributes.",
+            "nullable": true
+          },
+          "attributeToRead": {
+            "type": "string",
+            "description": "For Read operations, the specific attribute to read.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Encapsulates a single operation that may or may not be permitted."
+      },
+      "OperationPermissionResponse": {
+        "type": "object",
+        "properties": {
+          "isPermitted": {
+            "type": "boolean",
+            "description": "Indicates if the operation is permitted."
+          },
+          "permissionRuleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The IDs of the permission rules that allow this operation.",
+            "nullable": true
+          },
+          "requestorDisplayName": {
+            "type": "string",
+            "description": "The display name of the requestor.",
+            "nullable": true
+          },
+          "requestorIsAdmin": {
+            "type": "boolean",
+            "description": "Indicates if the requestor is an admin."
+          }
+        },
+        "additionalProperties": false,
+        "description": "The response returned by the check-permissions endpoint."
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": {},
+        "description": "Standard problem details payload for API errors."
+      },
       "ResourceDto": {
         "type": "object",
         "additionalProperties": true,

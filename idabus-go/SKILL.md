@@ -75,6 +75,14 @@ When the task is to discover schema metadata and the API exposes schema resource
 - After the task finishes, delete the simulation session with `delete-simulation-session`.
 - If a simulation session is created, make deletion mandatory even if a later request fails; treat cleanup as the final step of the task.
 
+## Permission Checks
+
+- For questions about whether a user can read, write, modify, delete, create, add, or remove something in Idabus, use `check-permissions` as the source of truth. Do not infer authorization from ordinary resource reads or from assumptions about roles.
+- In the answer, always report whether access is permitted.
+- Mention `requestorIsAdmin` when it is relevant to explaining the result.
+- If allowing permission rules are returned, always include each rule's `objectid` and `displayname` in the answer.
+- If no allowing permission rules are returned, explicitly say that no allowing permission rules were returned.
+
 ## Call The API
 
 Before sending a request:
