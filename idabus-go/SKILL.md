@@ -83,6 +83,35 @@ When the task is to discover schema metadata and the API exposes schema resource
 - If allowing permission rules are returned, always include each rule's `objectid` and `displayname` in the answer.
 - If no allowing permission rules are returned, explicitly say that no allowing permission rules were returned.
 
+## Functions/Function Expressions
+
+- Use the endpoint `execute-function-expression` to evaluate function expressions in Idabus.
+- Use function expressions only when necessary and for problems that are complicated and cannot be solved with XPath alone.
+- Treat the function expression language as a separate programming language embedded in the API. Function expressions should not be saved in files, but should be passed to the body of the API.
+- For prompts related to "functions" or "function expressions", **always** first carefully consult all of the following three documentations:
+  - `references/idabus_function_expression_language.md` for the syntax and semantics of function expressions in Idabus;
+  - `references/idabus_supported_functions.md` for the catalog of supported functions and their usages;
+    - Be careful to only use functions that exist! For example, don't simply assume that a function like `toLowerCase()` exists because it sounds plausible (it doesn't, it's called `toLower()`)!
+  - `references/idabus_function_examples.md` for example usages of function expressions in different contexts.
+- Only use `reduce()` when absolutely necessary. First check if there is a more elegant solution.
+
+### Performance
+
+When writing or reviewing function expressions, be careful to take performance into account. In particular,
+
+- try to avoid the N+1 Query Problem: instead of having many small XPath queries or resource retrieval calls in a loop, see if it is possible to use a larger single query and use its result as a lookup;
+  - but also try to avoid overly large queries unless necessary (e.g. fetching all or almost all person objects)
+
+- try to avoid `contains` in a loop (quadratic complexity) if you can also construct a dictionary and use `containsKey` instead;
+
+- write idiomatic code, e.g. use `xpathExists()` instead of `xpathCount(...) > 0`, or `xpathObjectIds()` when you just need a flat list of object IDs;
+
+- some performance estimations:
+  - in-memory operations are generally much faster than operations on the database (e.g. `xpath`, `getResource`)
+  - due to latency, even a simple `xpathExists()` call takes about 5 to 10 ms.
+  - the performance of XPath queries depends on the query (multi-step and nested queries are more expensive), on the number of returned results, and on which attributes are fetched.
+  - fetching the display names of 1000 resources via XPath takes about 50 ms, of 5000 takes 150 ms, 10000 takes 300 ms etc.
+
 ## Call The API
 
 Before sending a request:
