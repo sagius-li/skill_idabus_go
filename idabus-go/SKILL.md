@@ -20,10 +20,12 @@ Before sending any XPath-backed search request:
 1. Read `references/api_spec.json` to identify the exact endpoint contract.
 2. If the endpoint has `request_body.schema_ref`, read the referenced schema in `references/api_schema.json`.
 3. Read `references/idabus_xpath_dialect.md` and validate the XPath syntax against that dialect.
-4. Check whether the request body schema supports an XPath field such as `xPath`.
-5. Send the XPath in the request body whenever that body field exists.
-6. Use query-parameter XPath transport only when the endpoint does not support XPath in the request body.
-7. Request only the attributes needed for the task.
+4. Unless the user explicitly requests case-sensitive matching, treat attribute value checks as case-insensitive by default. For `=`, `starts-with`, `contains`, `ends-with`, regex matching, and similar non-sensitive operators, one literal is usually enough; do not add duplicate case variants such as both `'amy wells'` and `'Amy Wells'`. Use `equals-sensitive`, `starts-with-sensitive`, `contains-sensitive`, `ends-with-sensitive`, or `regex-match-sensitive` only when the prompt explicitly requires case-sensitive behavior.
+   Example: prefer `/person[starts-with(displayname,'amy wells')]` instead of `/person[starts-with(displayname,'amy wells') or starts-with(displayname,'Amy Wells')]`.
+5. Check whether the request body schema supports an XPath field such as `xPath`.
+6. Send the XPath in the request body whenever that body field exists.
+7. Use query-parameter XPath transport only when the endpoint does not support XPath in the request body.
+8. Request only the attributes needed for the task.
 
 Anti-pattern: do not default to `xPathQuery` in query parameters just because the endpoint spec lists that parameter. If the same endpoint also accepts XPath in the request body, body transport wins.
 
