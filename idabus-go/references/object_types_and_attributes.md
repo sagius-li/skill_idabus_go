@@ -54,6 +54,7 @@ Here is a list of common attributes that you may come across in the queries. You
   - Has value `OUAssignment` when used to assign an `ocgorgunit` to a `person`.
 - ocgobjectscope (string)
   - Has value `Person` when used to assign an `ocgrole` to a `person`
+  - Has value `Person` when used to assign a `person` to an `ocgorgunit`
   - Has value `OU` when used to assign an `ocgrole` to a `ocgorgunit`
 - ocglinksourceref (reference)
   - For role assignments, this is a reference to the role.
