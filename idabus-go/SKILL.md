@@ -135,6 +135,8 @@ Before sending a request:
 - For resource searches that use XPath, read `references/idabus_xpath_dialect.md` first and use that syntax in the request body whenever possible.
 - If a simulation session is active for the task, include its ID on reads and writes alike until cleanup is complete.
 - After the task's API work is complete, delete any simulation session that was created for that task.
+- Unless the user explicitly asks for output files, do not use `--output` and rely on stdout instead.
+- If the user does ask for output files, save them under `idabus-go/output/`.
 
 Run:
 
@@ -174,7 +176,7 @@ python3 scripts/resource.py --method PATCH --endpoint-name update-resource --pat
 
 Optional flags:
 
-- `--output path/to/resource.json` to save the raw JSON payload
+- `--output idabus-go/output/<name>.json` to save the raw JSON payload when the user explicitly asks for an output file
 - `--env-file path/to/.env` to load a non-default env file
 - `--timeout 60` to override the HTTP timeout for one request
 - `--query key=value` to add query parameters
