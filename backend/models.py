@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+from typing import Any, Dict, List, Literal, Optional
+
+from pydantic import BaseModel, Field
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1)
+    sessionId: Optional[str] = None
+    history: List[ChatMessage] = Field(default_factory=list)
+
+
+class ToolEvent(BaseModel):
+    type: Literal["status", "error"]
+    message: str
+    details: Optional[Dict[str, Any]] = None
+
+
+class ChatResponse(BaseModel):
+    sessionId: str
+    reply: str
+    toolEvents: List[ToolEvent] = Field(default_factory=list)

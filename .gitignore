@@ -1,8 +1,6 @@
-.env
-.oauth-token-cache.json
-*.token.json
-*.response.json
+backend/.env
+idabus-go/.env
+idabus-go/.oauth-token-cache.json
 __pycache__/
 *.pyc
 .DS_Store
-output
