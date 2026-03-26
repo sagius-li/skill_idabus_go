@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from pathlib import Path
+from typing import Any, Dict, List
 
 from openai import OpenAI
 
@@ -10,13 +11,15 @@ from idabus_tool import ToolExecutionError, run_idabus_request
 from models import ToolEvent
 
 
-SYSTEM_PROMPT = """You are a helpful AI assistant inside a custom chat app.
+BASE_SYSTEM_PROMPT = """You are a helpful AI assistant inside a custom chat app.
 
 You can answer directly or decide to use the idabus_request tool when the task requires Idabus API access.
 
 When using Idabus:
 - Use idabus_request when Idabus API work is required.
-- Prefer endpoint_name over raw paths when the endpoint is known.
+- Prefer endpoint_name over raw paths whenever the endpoint exists in the local API catalog.
+- Only use endpoint names that exist in the provided endpoint catalog. Do not invent endpoint names.
+- Do not invent raw paths such as guessed REST endpoints when the local endpoint catalog does not list them.
 - Keep reads narrow and request only the attributes needed for the task.
 - For XPath-backed searches, prefer request-body XPath transport when the endpoint body supports it.
 - For permission questions, use the relevant permission-check endpoint rather than assuming access.
@@ -69,6 +72,43 @@ class AgentLoopError(RuntimeError):
     pass
 
 
+def _read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8").strip()
+
+
+def _load_endpoint_catalog(idabus_root: Path) -> str:
+    spec_path = idabus_root / "references" / "api_spec.json"
+    spec = json.loads(_read_text(spec_path))
+    endpoints = spec.get("endpoints", [])
+    lines: List[str] = []
+    for endpoint in endpoints:
+        if not isinstance(endpoint, dict):
+            continue
+        name = str(endpoint.get("name", "")).strip()
+        method = str(endpoint.get("method", "")).strip()
+        path = str(endpoint.get("path", "")).strip()
+        description = str(endpoint.get("description", "")).strip()
+        if not name:
+            continue
+        summary = f"- {name}: {method} {path}"
+        if description:
+            summary = f"{summary} - {description}"
+        lines.append(summary)
+    return "\n".join(lines)
+
+
+def build_system_prompt(settings: Settings) -> str:
+    skill_text = _read_text(settings.idabus_root / "SKILL.md")
+    endpoint_catalog = _load_endpoint_catalog(settings.idabus_root)
+    return (
+        f"{BASE_SYSTEM_PROMPT}\n\n"
+        "Local endpoint catalog:\n"
+        f"{endpoint_catalog}\n\n"
+        "Local skill instructions:\n"
+        f"{skill_text}\n"
+    )
+
+
 def _extract_text(message: Any) -> str:
     content = getattr(message, "content", None)
     if isinstance(content, str):
@@ -118,6 +158,7 @@ class ChatAgent:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._client = OpenAI(api_key=settings.openai_api_key)
+        self._system_prompt = build_system_prompt(settings)
 
     def run_turn(self, messages: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str, list[ToolEvent]]:
         working_messages = list(messages)
@@ -127,7 +168,7 @@ class ChatAgent:
             completion = self._client.chat.completions.create(
                 model=self._settings.openai_model,
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": self._system_prompt},
                     *working_messages,
                 ],
                 tools=TOOLS,
