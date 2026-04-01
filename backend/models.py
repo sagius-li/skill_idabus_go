@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -26,3 +26,36 @@ class ChatResponse(BaseModel):
     sessionId: str
     reply: str
     toolEvents: List[ToolEvent] = Field(default_factory=list)
+
+
+class SessionStartedEvent(BaseModel):
+    type: Literal["session_started"]
+    sessionId: str
+
+
+class ToolStreamEvent(BaseModel):
+    type: Literal["tool_event"]
+    event: ToolEvent
+
+
+class AssistantMessageEvent(BaseModel):
+    type: Literal["assistant_message"]
+    reply: str
+
+
+class ErrorEvent(BaseModel):
+    type: Literal["error"]
+    message: str
+
+
+class DoneEvent(BaseModel):
+    type: Literal["done"]
+
+
+ChatStreamEvent = Union[
+    SessionStartedEvent,
+    ToolStreamEvent,
+    AssistantMessageEvent,
+    ErrorEvent,
+    DoneEvent,
+]

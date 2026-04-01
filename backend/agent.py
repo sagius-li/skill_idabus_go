@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from pathlib import PurePosixPath
-from typing import Any, Dict, List
+from typing import Any, Dict, Generator, List
 
 from openai import OpenAI
 
@@ -94,6 +95,13 @@ class AgentLoopError(RuntimeError):
 
 class SkillReferenceError(RuntimeError):
     pass
+
+
+@dataclass
+class TurnCompletion:
+    messages: list[dict[str, Any]]
+    reply: str
+    loaded_skill_references: dict[str, str]
 
 
 REFERENCE_PATH_PATTERN = re.compile(r"`([^`\n]+(?:/[^`\n]+)+)`")
@@ -244,13 +252,12 @@ class ChatAgent:
         self._settings = settings
         self._client = OpenAI(api_key=settings.openai_api_key)
 
-    def run_turn(
+    def stream_turn(
         self,
         messages: list[dict[str, Any]],
         loaded_references: dict[str, str] | None = None,
-    ) -> tuple[list[dict[str, Any]], str, list[ToolEvent], dict[str, str]]:
+    ) -> Generator[ToolEvent, None, TurnCompletion]:
         working_messages = list(messages)
-        tool_events: list[ToolEvent] = []
         active_references = dict(loaded_references or {})
 
         for _ in range(self._settings.chat_max_tool_rounds):
@@ -274,7 +281,11 @@ class ChatAgent:
             tool_calls = getattr(message, "tool_calls", None) or []
             if not tool_calls:
                 reply = _extract_text(message) or "I couldn't produce a response."
-                return working_messages, reply, tool_events, active_references
+                return TurnCompletion(
+                    messages=working_messages,
+                    reply=reply,
+                    loaded_skill_references=active_references,
+                )
 
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name
@@ -312,23 +323,19 @@ class ChatAgent:
                     raise AgentLoopError(f"Unsupported tool requested: {tool_name}")
 
                 endpoint_name = arguments.get("endpoint_name") or arguments.get("path") or "custom request"
-                tool_events.append(
-                    ToolEvent(
-                        type="status",
-                        message=f"Using Idabus tool: {endpoint_name}",
-                    )
-                )
 
                 try:
                     result = run_idabus_request(self._settings.idabus_root, arguments)
                     tool_output = _safe_json_dump(result)
+                    yield ToolEvent(
+                        type="status",
+                        message=f"Using Idabus tool: {endpoint_name}",
+                    )
                 except ToolExecutionError as exc:
-                    tool_events.append(
-                        ToolEvent(
-                            type="error",
-                            message="Idabus request failed.",
-                            details={"error": str(exc)},
-                        )
+                    yield ToolEvent(
+                        type="error",
+                        message="Idabus request failed.",
+                        details={"error": str(exc)},
                     )
                     tool_output = _safe_json_dump({"error": str(exc)})
 
@@ -342,4 +349,26 @@ class ChatAgent:
 
         raise AgentLoopError(
             "The assistant needed too many tool steps for this request. Please narrow the task and try again."
+        )
+
+    def run_turn(
+        self,
+        messages: list[dict[str, Any]],
+        loaded_references: dict[str, str] | None = None,
+    ) -> tuple[list[dict[str, Any]], str, list[ToolEvent], dict[str, str]]:
+        stream = self.stream_turn(messages, loaded_references)
+        tool_events: list[ToolEvent] = []
+
+        while True:
+            try:
+                tool_events.append(next(stream))
+            except StopIteration as stop:
+                completion = stop.value
+                break
+
+        return (
+            completion.messages,
+            completion.reply,
+            tool_events,
+            completion.loaded_skill_references,
         )
