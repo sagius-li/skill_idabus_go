@@ -40,13 +40,17 @@ def chat(request: ChatRequest) -> ChatResponse:
     state.messages.append({"role": "user", "content": request.message})
 
     try:
-        updated_messages, reply, tool_events = chat_agent.run_turn(state.messages)
+        updated_messages, reply, tool_events, loaded_skill_references = chat_agent.run_turn(
+            state.messages,
+            state.loaded_skill_references,
+        )
     except (AgentLoopError, ConfigError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail="The chat service failed to process the request.") from exc
 
     state.messages = updated_messages
+    state.loaded_skill_references = loaded_skill_references
     session_store.save(state)
     return ChatResponse(sessionId=state.session_id, reply=reply, toolEvents=tool_events)
 

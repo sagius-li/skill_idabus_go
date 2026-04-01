@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 class SessionState:
     session_id: str
     messages: List[Dict[str, Any]] = field(default_factory=list)
+    loaded_skill_references: Dict[str, str] = field(default_factory=dict)
     updated_at: float = field(default_factory=time.time)
 
 

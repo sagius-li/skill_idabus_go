@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Any, Dict, List
 
 from openai import OpenAI
@@ -17,6 +19,9 @@ You can answer directly or decide to use the idabus_request tool when the task r
 
 When using Idabus:
 - Use idabus_request when Idabus API work is required.
+- You always have the local SKILL.md instructions, but you do not automatically have the full contents of every referenced file.
+- If SKILL.md mentions a local file and you need that file's contents, call load_skill_reference with the exact relative path written in SKILL.md instead of guessing.
+- Only request local files that are explicitly referenced in SKILL.md.
 - Prefer endpoint_name over raw paths whenever the endpoint exists in the local API catalog.
 - Only use endpoint names that exist in the provided endpoint catalog. Do not invent endpoint names.
 - Do not invent raw paths such as guessed REST endpoints when the local endpoint catalog does not list them.
@@ -33,6 +38,21 @@ Be concise and helpful in the final answer.
 
 
 TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "load_skill_reference",
+            "description": "Load the contents of a local file that is explicitly referenced in the idabus-go SKILL.md.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "reference_path": {"type": "string"},
+                },
+                "required": ["reference_path"],
+                "additionalProperties": False,
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -72,6 +92,13 @@ class AgentLoopError(RuntimeError):
     pass
 
 
+class SkillReferenceError(RuntimeError):
+    pass
+
+
+REFERENCE_PATH_PATTERN = re.compile(r"`([^`\n]+(?:/[^`\n]+)+)`")
+
+
 def _read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8").strip()
 
@@ -97,16 +124,74 @@ def _load_endpoint_catalog(idabus_root: Path) -> str:
     return "\n".join(lines)
 
 
-def build_system_prompt(settings: Settings) -> str:
+def _extract_skill_reference_paths(skill_text: str) -> set[str]:
+    references: set[str] = set()
+    for match in REFERENCE_PATH_PATTERN.findall(skill_text):
+        candidate = match.strip()
+        if not candidate or candidate.startswith("/"):
+            continue
+        if " " in candidate or "\t" in candidate or "\n" in candidate:
+            continue
+        references.add(candidate)
+    return references
+
+
+def _normalize_reference_path(reference_path: str) -> str:
+    candidate = reference_path.strip()
+    if not candidate:
+        raise SkillReferenceError("Reference path must not be empty.")
+
+    path = PurePosixPath(candidate)
+    if path.is_absolute():
+        raise SkillReferenceError("Reference path must be relative to idabus-go.")
+    if any(part in {"", ".", ".."} for part in path.parts):
+        raise SkillReferenceError("Reference path must not contain path traversal.")
+
+    normalized = path.as_posix()
+    if normalized == ".":
+        raise SkillReferenceError("Reference path must point to a file.")
+    return normalized
+
+
+def load_skill_reference(idabus_root: Path, reference_path: str) -> tuple[str, str]:
+    skill_text = _read_text(idabus_root / "SKILL.md")
+    normalized_path = _normalize_reference_path(reference_path)
+    allowed_references = _extract_skill_reference_paths(skill_text)
+    if normalized_path not in allowed_references:
+        raise SkillReferenceError(
+            f"Reference path is not explicitly mentioned in SKILL.md: {normalized_path}"
+        )
+
+    root = idabus_root.resolve()
+    resolved_path = (root / normalized_path).resolve()
+    try:
+        resolved_path.relative_to(root)
+    except ValueError as exc:
+        raise SkillReferenceError("Reference path must stay inside idabus-go.") from exc
+
+    if not resolved_path.is_file():
+        raise SkillReferenceError(f"Referenced file was not found: {normalized_path}")
+
+    return normalized_path, _read_text(resolved_path)
+
+
+def build_system_prompt(settings: Settings, loaded_references: dict[str, str] | None = None) -> str:
     skill_text = _read_text(settings.idabus_root / "SKILL.md")
     endpoint_catalog = _load_endpoint_catalog(settings.idabus_root)
-    return (
+    prompt = (
         f"{BASE_SYSTEM_PROMPT}\n\n"
         "Local endpoint catalog:\n"
         f"{endpoint_catalog}\n\n"
         "Local skill instructions:\n"
         f"{skill_text}\n"
     )
+    if loaded_references:
+        sections = [
+            f"Local referenced file: {path}\n{content}"
+            for path, content in loaded_references.items()
+        ]
+        prompt = f"{prompt}\nLoaded local references:\n\n" + "\n\n".join(sections) + "\n"
+    return prompt
 
 
 def _extract_text(message: Any) -> str:
@@ -158,17 +243,24 @@ class ChatAgent:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._client = OpenAI(api_key=settings.openai_api_key)
-        self._system_prompt = build_system_prompt(settings)
 
-    def run_turn(self, messages: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str, list[ToolEvent]]:
+    def run_turn(
+        self,
+        messages: list[dict[str, Any]],
+        loaded_references: dict[str, str] | None = None,
+    ) -> tuple[list[dict[str, Any]], str, list[ToolEvent], dict[str, str]]:
         working_messages = list(messages)
         tool_events: list[ToolEvent] = []
+        active_references = dict(loaded_references or {})
 
         for _ in range(self._settings.chat_max_tool_rounds):
             completion = self._client.chat.completions.create(
                 model=self._settings.openai_model,
                 messages=[
-                    {"role": "system", "content": self._system_prompt},
+                    {
+                        "role": "system",
+                        "content": build_system_prompt(self._settings, active_references),
+                    },
                     *working_messages,
                 ],
                 tools=TOOLS,
@@ -182,7 +274,7 @@ class ChatAgent:
             tool_calls = getattr(message, "tool_calls", None) or []
             if not tool_calls:
                 reply = _extract_text(message) or "I couldn't produce a response."
-                return working_messages, reply, tool_events
+                return working_messages, reply, tool_events, active_references
 
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name
@@ -190,6 +282,31 @@ class ChatAgent:
                     arguments = json.loads(tool_call.function.arguments or "{}")
                 except json.JSONDecodeError as exc:
                     raise AgentLoopError(f"Model returned invalid tool arguments for {tool_name}.") from exc
+
+                if tool_name == "load_skill_reference":
+                    reference_path = arguments.get("reference_path", "")
+                    try:
+                        normalized_path, content = load_skill_reference(
+                            self._settings.idabus_root,
+                            str(reference_path),
+                        )
+                        active_references[normalized_path] = content
+                        tool_output = _safe_json_dump(
+                            {
+                                "reference_path": normalized_path,
+                                "status": "loaded",
+                            }
+                        )
+                    except SkillReferenceError as exc:
+                        tool_output = _safe_json_dump({"error": str(exc)})
+                    working_messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": tool_output,
+                        }
+                    )
+                    continue
 
                 if tool_name != "idabus_request":
                     raise AgentLoopError(f"Unsupported tool requested: {tool_name}")

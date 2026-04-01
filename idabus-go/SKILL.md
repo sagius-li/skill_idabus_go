@@ -7,11 +7,11 @@ description: Connect to an Idabus web API through an OAuth2-compliant identity p
 
 ## Overview
 
-Authenticate to an Idabus API with OAuth2 and send generic authenticated HTTP requests. Use `references/api_spec.json` as the source of truth for endpoint names, parameter names, endpoint descriptions, and request body metadata before calling the API.
+- Authenticate to an Idabus API with OAuth2 and send generic authenticated HTTP requests. Use `references/api_spec.json` as the source of truth for endpoint names, parameter names, endpoint descriptions, and request body metadata before calling the API.
 
-When you need information about different object types and their purpose, consult `references/object_types_and_attributes.md`.
+- Whenever object semantics are uncertain, load `references/object_types_and_attributes.md` before proceeding.
 
-For resource searches that use XPath, consult `references/idabus_xpath_dialect.md` before writing the query and prefer sending the XPath in the request body whenever the endpoint body supports an XPath field.
+- For resource searches that use XPath, consult `references/idabus_xpath_dialect.md` before writing the query and prefer sending the XPath in the request body whenever the endpoint body supports an XPath field.
 
 ## XPath Search Checklist
 
@@ -70,12 +70,15 @@ When the task is to discover schema metadata and the API exposes schema resource
 
 ## Simulation Sessions
 
-- Unless the user explicitly says not to, execute mutating actions such as create, update, and delete inside a simulation session.
+- For any task that creates, updates, or deletes Idabus resources, you MUST create a simulation session first unless the user explicitly says to modify real data.
+- You MUST include the simulation session ID on every Idabus request in that task, including all reads, writes, and validation checks.
 - For a task that includes any simulated action, use the same simulation session for every request in that task, including read requests, so all requests share the same simulated state and data.
+- It is a violation to create a simulation session and then omit the simulation session ID from any subsequent task request.
 - Before the first request of that task, create a simulation session with `create-simulation-session`.
 - Pass the created simulation session ID on every request in the task by using the endpoint parameter name defined in `references/api_spec.json`.
 - After the task finishes, delete the simulation session with `delete-simulation-session`.
-- If a simulation session is created, make deletion mandatory even if a later request fails; treat cleanup as the final step of the task.
+- For `delete-simulation-session`, you MUST supply `simulationSessionId` as the endpoint path parameter.
+- If a simulation session was created, cleanup is mandatory. You MUST attempt deletion even if intermediate requests fail, and MUST report cleanup success or failure.
 
 ## Permission Checks
 

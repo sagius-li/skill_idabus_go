@@ -3,10 +3,11 @@
 - person (user objects)
 - group (group objects)
 - event (event objects)
+- permissionrule (permission rules to configure access permission in idabus)
 - ocgassignment (encapsulates 1:1 relations between objects, e.g. org unit memberships)
 - ocgorgunit (organizational units (OU))
 - ocgrole (roles)
-- ocgpermission (permission objects)
+- ocgpermission (permission objects, this is not the permission rules to configure access permission in idabus)
 - ocgsod (separation of duty rules)
 
 # Common attributes
@@ -44,6 +45,31 @@ Here is a list of common attributes that you may come across in the queries. You
 - memberxpath (string, optionally specifies an XPath query for populating `computedmember`)
 - computedmember (multivalued large XPath-based reference)
 - grouptype (string)
+
+## Permission rule attributes
+
+- isenabled
+- requestorxpath
+  - Define the requestor
+- permissions (multivalued string)
+  - Define the permissions to apply, available values are,
+    - Read: can read enattribute
+    - Create: can create a resource
+    - Modify: can modify an attribute
+    - Add: can add value to a multivalued attribute
+    - Remove: can remove value from a multivalued attribute
+    - Delete: can delete a resource
+- resourcebeforexpath
+  - Define the target resource before the permissions are applied
+  - Required for the read, modify, add, remove and delete permission
+- resourceafterxpath
+  - Define the target resource after the permission are applied
+  - Required for the create permission
+  - Optional for the modify permission
+- resourceattributes (multivalued string)
+  - Define for which attributes the permission should apply
+- allattributes (boolean)
+  - Indicate whether the permission should apply to all attributes
 
 ## OCG Assignment (ocgassignment) attributes
 
