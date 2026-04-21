@@ -1,6 +1,6 @@
 ---
 name: idabus-go
-description: Connect to an Idabus web API through an OAuth2-compliant identity provider and send authenticated HTTP requests. Use when Codex needs to configure OAuth2 access for an Idabus API, inspect the local API specification, or call documented endpoints with GET, POST, PUT, PATCH, or DELETE.
+description: Connect to an Idabus web API through an OAuth2-compliant identity provider, send authenticated HTTP requests, and send SMTP email from the local helper scripts. Use when Codex needs to configure OAuth2 access for an Idabus API, inspect the local API specification, call documented endpoints with GET, POST, PUT, PATCH, or DELETE, or send email through the configured SMTP settings.
 ---
 
 # Idabus Go
@@ -12,6 +12,8 @@ description: Connect to an Idabus web API through an OAuth2-compliant identity p
 - Whenever object semantics are uncertain, load `references/object_types_and_attributes.md` before proceeding.
 
 - For resource searches that use XPath, consult `references/idabus_xpath_dialect.md` before writing the query and prefer sending the XPath in the request body whenever the endpoint body supports an XPath field.
+
+- If the user asks to send email, use `scripts/send_email.py` instead of building an ad hoc mail sender. Supply recipients with repeated `--to` flags and attachments with repeated `--attachment` flags.
 
 ## XPath Search Checklist
 
@@ -56,6 +58,7 @@ When the task is to discover schema metadata and the API exposes schema resource
 12. Do not send a resource-read request without an explicit attribute list when the endpoint body supports attribute selection, even for exploratory or discovery calls.
 13. If the task needs one field to discover the next request, ask only for that field and the minimal supporting fields needed to continue.
 14. Run `python3 scripts/resource.py --endpoint-name <name>` or `python3 scripts/resource.py --method GET --path /example`.
+15. If the task is to send email, run `python3 scripts/send_email.py` with SMTP settings loaded from `.env`.
 
 ## Configure Local Secrets
 
@@ -67,6 +70,43 @@ When the task is to discover schema metadata and the API exposes schema resource
 - `auth.py` opens interactive login in your current browser and requests fresh authentication with `prompt=login`.
 - Read `references/api_spec.json` before choosing an endpoint name or parameter set.
 - Read `references/api_setup.md` when wiring the authorization endpoint, token endpoint, scope, or base API URL.
+- Keep SMTP settings for `scripts/send_email.py` in the same `.env` file: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_USE_TLS`, and `SMTP_FROM_EMAIL`.
+
+## Send emails
+
+- Only send emails if asked to.
+- If there is no subject and body specified, find the suitable content for the email from the task context and use that as the subject and body.
+
+The email script:
+
+- loads SMTP configuration from `.env`
+- validates sender and recipient email addresses before sending
+- sends plain-text email through SMTP with optional TLS
+- attaches local files when `--attachment` is provided
+- prints a short success message to stdout
+
+optional flags
+
+- `--to recipient@example.com` repeated to send to multiple recipients with `scripts/send_email.py`
+- `--attachment path/to/file` repeated to attach multiple files with `scripts/send_email.py`
+
+To send a plain-text email:
+
+```bash
+python3 scripts/send_email.py --to alice@example.com --to bob@example.com --subject "Status update" --body "The sync completed successfully."
+```
+
+To send an email with attachments:
+
+```bash
+python3 scripts/send_email.py --to ops@example.com --subject "Daily reports" --body "Attached are the generated reports." --attachment ./report.csv --attachment ./summary.txt
+```
+
+To send an email body from a file:
+
+```bash
+python3 scripts/send_email.py --to team@example.com --subject "Release notes" --body-file ./release_notes.txt
+```
 
 ## Simulation Sessions
 
@@ -229,6 +269,7 @@ The request script:
 
 - `scripts/auth.py`: acquire an OAuth2 access token without printing secrets
 - `scripts/resource.py`: send authenticated GET, POST, PUT, PATCH, or DELETE requests and print raw JSON
+- `scripts/send_email.py`: send plain-text SMTP email to one or more recipients with optional file attachments
 - `references/api_spec.json`: endpoint catalog with endpoint names, parameters, and descriptions
 - `references/api_schema.json`: local JSON schema bundle for request bodies referenced from `api_spec.json`
 - `references/idabus_xpath_dialect.md`: local reference for the Idabus XPath search syntax
