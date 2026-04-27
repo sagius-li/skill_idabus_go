@@ -4,3 +4,4 @@ idabus-go/.oauth-token-cache.json
 __pycache__/
 *.pyc
 .DS_Store
+idabus-go/output/
