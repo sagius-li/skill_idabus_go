@@ -111,7 +111,7 @@ python3 scripts/send_email.py --to team@example.com --subject "Release notes" --
 ## Simulation Sessions
 
 - For any task that creates, updates, or deletes Idabus resources, you MUST create a simulation session first unless the user explicitly says to modify real data.
-- You MUST include the simulation session ID on every Idabus request in that task, including all reads, writes, and validation checks.
+- You MUST include the simulation session ID on every Idabus request in that task, including all reads, writes, creations, deletions and validation checks.
 - For a task that includes any simulated action, use the same simulation session for every request in that task, including read requests, so all requests share the same simulated state and data.
 - It is a violation to create a simulation session and then omit the simulation session ID from any subsequent task request.
 - Before the first request of that task, create a simulation session with `create-simulation-session`.
@@ -119,6 +119,7 @@ python3 scripts/send_email.py --to team@example.com --subject "Release notes" --
 - After the task finishes, delete the simulation session with `delete-simulation-session`.
 - For `delete-simulation-session`, you MUST supply `simulationSessionId` as the endpoint path parameter.
 - If a simulation session was created, cleanup is mandatory. You MUST attempt deletion even if intermediate requests fail, and MUST report cleanup success or failure.
+- If you are asked to check something that was modified in a simulation session, you MUST wait at least 5 seconds after the modifying request before sending the checking request to let the workflows finish their work and the simulated data stabilize. Do not send the follow-up request before that wait has completed.
 
 ## Permission Checks
 
