@@ -25,11 +25,12 @@ def get_bool_env(name: str, default: bool) -> bool:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Send a plain-text email with optional attachments via SMTP.")
+    parser = argparse.ArgumentParser(description="Send an email with optional attachments via SMTP.")
     parser.add_argument("--to", action="append", required=True, default=[], help="Recipient email address. Repeat for multiple recipients.")
     parser.add_argument("--subject", required=True, help="Email subject.")
-    parser.add_argument("--body", help="Inline plain-text email body.")
-    parser.add_argument("--body-file", help="Path to a plain-text file used as the email body.")
+    parser.add_argument("--body", help="Inline email body.")
+    parser.add_argument("--body-file", help="Path to a file used as the email body.")
+    parser.add_argument("--html", action="store_true", help="Send the body as HTML instead of plain text.")
     parser.add_argument(
         "--attachment",
         action="append",
@@ -90,12 +91,16 @@ def add_attachments(message: EmailMessage, attachments: list[str]) -> None:
         message.add_attachment(payload, maintype=maintype, subtype=subtype, filename=attachment_path.name)
 
 
-def build_message(sender: str, recipients: list[str], subject: str, body: str, attachments: list[str]) -> EmailMessage:
+def build_message(sender: str, recipients: list[str], subject: str, body: str, attachments: list[str], html: bool) -> EmailMessage:
     message = EmailMessage()
     message["From"] = sender
     message["To"] = ", ".join(recipients)
     message["Subject"] = subject
-    message.set_content(body)
+    if html:
+        message.set_content("This email contains an HTML version of the requested list.")
+        message.add_alternative(body, subtype="html")
+    else:
+        message.set_content(body)
     add_attachments(message, attachments)
     return message
 
@@ -136,7 +141,7 @@ def main() -> int:
         sender = validate_email_address(require_env("SMTP_FROM_EMAIL"))
         recipients = [validate_email_address(value) for value in args.to]
         body = resolve_body(args)
-        message = build_message(sender, recipients, args.subject, body, args.attachment)
+        message = build_message(sender, recipients, args.subject, body, args.attachment, args.html)
         send_message(message, recipients)
     except ConfigError as exc:
         print(str(exc), file=sys.stderr)
