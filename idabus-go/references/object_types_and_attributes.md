@@ -46,6 +46,70 @@ Here is a list of common attributes that you may come across in the queries. You
 - computedmember (multivalued large XPath-based reference)
 - grouptype (string)
 
+## Event attributes
+
+- rooteventid (reference)
+- requestorid (reference, contains the object id of the requestor)
+- requestordisplayname (string, contains the display name of the requestor)
+- targetid (reference, contains the object id of the target)
+- targetdisplayname (string, contains the display name of the target)
+- targetobjecttype (string, contains the object type of the target)
+- committedtime (datetime, contains the timestamp when the event is handled)
+- completedtime (datetime, contains the timestamp when the event and all it's childevents are finished)
+- status (string)
+  - Contains the state of the event, available values are,
+    - Success
+    - Skipped
+    - Failed
+    - Denied
+    - PostProcessing
+    - PostProcessingFailed
+    - Waiting
+    - Canceled
+    - ManuallyClosed
+- eventtype (string)
+  - Defines the type of the event, available values are,
+    - resource: events that change resources, see the attribute "resourcechangedtype"
+    - request: events that don't change resources, see the attribute "requesttype"
+- resourcechangedtype (string)
+  - Defines the resource change type if eventtype equals "resource", available values are,
+    - Create: resource is created
+    - Modify: resource is modified
+    - Delete: resource is deleted
+- fullresource (object)
+  - Contains the created or deleted resource, if eventtype equals "resource" and resourcechangedtype equals "Create" or "Delete"
+- attributeassignments (object)
+  - Contains the new attribute values, if event type equals "resource" and resourcechangedtype equals "Modify"
+- previousattributeassignments (object)
+  - Contains the old attribute values, if event type equals "resource" and resourcechangedtype equals "Modify"
+- multivalueinsertions (object)
+  - Contains the inserted values of multivalued attributes, if event type equals "resource" and resourcechangedtype equals "Modify"
+- multivalueremovals (object)
+  - Contains the deleted values of multivalued attributes, if event type equals "resource" and resourcechangedtype equals "Modify"
+- requesttype (string)
+  - Defines the request type if eventtype equals "request", available values are,
+    - 'CreateResource',
+    - 'UpdateResource',
+    - 'DeleteResource',
+    - 'BatchResourceCreate',
+    - 'BatchResourceUpdate',
+    - 'BatchResourceDelete',
+    - 'Import',
+    - 'XPathAttribute',
+    - 'TimedWorkflowTrigger',
+    - 'EventUpdate',
+    - 'Cancel',
+    - 'Resume',
+    - 'ReplaceWorkflow',
+    - 'Restore',
+    - 'RevertRequest',
+    - 'RecomputeDataflow',
+    - 'ReportMigration',
+    - 'Backup',
+    - 'Approval',
+    - 'Admin',
+    - 'ExecuteWorkflow',
+
 ## Permission rule attributes
 
 - isenabled

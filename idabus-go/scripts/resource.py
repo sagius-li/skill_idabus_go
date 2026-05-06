@@ -131,6 +131,47 @@ def execute_request(
         raise ConfigError(f"API response was not valid JSON: {exc}") from exc
 
 
+def execute_request_with_headers(
+    method: str,
+    path: str,
+    query_params: dict[str, str],
+    headers: dict[str, str],
+    body: bytes | None,
+    content_type: str | None,
+    timeout: int,
+) -> tuple[int, object, dict[str, str]]:
+    url = build_url(path, query_params)
+    token = acquire_access_token()
+    final_headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json",
+        **headers,
+    }
+    if content_type and "Content-Type" not in final_headers:
+        final_headers["Content-Type"] = content_type
+
+    http_request = request.Request(
+        url,
+        headers=final_headers,
+        data=body,
+        method=method,
+    )
+
+    try:
+        with request.urlopen(http_request, timeout=timeout) as response:
+            payload = response.read().decode("utf-8")
+            parsed_payload = json.loads(payload) if payload else {}
+            return response.status, parsed_payload, dict(response.headers.items())
+    except error.HTTPError as exc:
+        payload = exc.read().decode("utf-8", errors="replace")
+        detail = payload or exc.reason
+        raise ConfigError(f"API request failed with HTTP {exc.code}: {detail}") from exc
+    except error.URLError as exc:
+        raise ConfigError(f"API request failed: {exc.reason}") from exc
+    except json.JSONDecodeError as exc:
+        raise ConfigError(f"API response was not valid JSON: {exc}") from exc
+
+
 def write_output(output_path: Path, payload: object) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(payload, indent=2) + "\n")
@@ -178,6 +219,7 @@ def main() -> int:
     parser.add_argument("--body-file", help="Path to a file used as the request body.")
     parser.add_argument("--content-type", help="Content-Type header for --body-file.")
     parser.add_argument("--output", help="Optional path to save the JSON payload.")
+    parser.add_argument("--include-response-headers", action="store_true", help="Include response status and headers in the printed JSON.")
     parser.add_argument("--env-file", default=str(default_env_path()), help="Path to the .env file.")
     parser.add_argument("--timeout", type=int, help="HTTP timeout in seconds.")
     args = parser.parse_args()
@@ -193,7 +235,15 @@ def main() -> int:
         headers = parse_key_value_pairs(args.header)
         method, path = resolve_request_from_args(args)
         body, content_type = build_body(args)
-        _, payload = execute_request(method, path, query_params, headers, body, content_type, timeout)
+        if args.include_response_headers:
+            status, payload, response_headers = execute_request_with_headers(method, path, query_params, headers, body, content_type, timeout)
+            payload = {
+                "status": status,
+                "headers": response_headers,
+                "body": payload,
+            }
+        else:
+            _, payload = execute_request(method, path, query_params, headers, body, content_type, timeout)
     except ConfigError as exc:
         print(str(exc), file=sys.stderr)
         return 1

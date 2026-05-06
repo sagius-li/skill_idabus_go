@@ -119,7 +119,11 @@ python3 scripts/send_email.py --to team@example.com --subject "Release notes" --
 - After the task finishes, delete the simulation session with `delete-simulation-session`.
 - For `delete-simulation-session`, you MUST supply `simulationSessionId` as the endpoint path parameter.
 - If a simulation session was created, cleanup is mandatory. You MUST attempt deletion even if intermediate requests fail, and MUST report cleanup success or failure.
-- If you are asked to check something that was modified in a simulation session, you MUST wait at least 5 seconds after the modifying request before sending the checking request to let the workflows finish their work and the simulated data stabilize. Do not send the follow-up request before that wait has completed.
+
+### Validate / check rsults in simulation sessions
+
+- If anything should be validated or checked in a simulation session after a resource change is made, you MUST get the event id of the change request according to the `Events` section and wait untile the event is completed - means, the event and all its child events have finished processing.
+- Validations or checks can only be done after the event, which changes the resources, is completed.
 
 ## Permission Checks
 
@@ -265,6 +269,18 @@ The request script:
 - When building a request body for resource retrieval, prefer explicit attribute lists over broad defaults so the response matches the task's required fields.
 - For XPath-backed search endpoints, use `references/idabus_xpath_dialect.md` as the source of truth for the XPath expression syntax.
 - Prefer `--endpoint-name` over hardcoded paths when the endpoint exists in the specification.
+
+## Events
+
+- Every API call to the Idabus endpoints that creates, updates or deletes resources will return an event id in the response header `X-Idabus-Event-Id`. This event id can be used to query the status or other details of the event through the `get-resource-by-id` endpoint.
+- If the task involves checking the status for finished events, the following status values indicate that the event and all its child events have finished processing:
+  - `Success`
+  - `Skipped`
+  - `Failed`
+  - `Denied`
+  - `PostProcessingFailed`
+  - `Canceled`
+  - `ManuallyClosed`
 
 ## Resources
 
