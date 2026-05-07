@@ -13,6 +13,18 @@ description: Connect to an Idabus web API through an OAuth2-compliant identity p
 
 - For resource searches that use XPath, consult `references/idabus_xpath_dialect.md` before writing the query and prefer sending the XPath in the request body whenever the endpoint body supports an XPath field.
 
+- For tasks that involve mutating resources like create, update, or delete, you MUST follow these steps unless the user explicitly says to modify real data:
+  1. Create a simulation session according to the `Simulation Sessions` section and get the simulation session ID. It is a violation to create a simulation session and then omit the simulation session ID from any subsequent task request.
+  2. Every subsequent request in this task MUST include the simulation session ID in the query parameter of the request, including reads, writes, and validation checks, request without the simulation session ID is a violation
+  3. Do whatever is necessary including mutating the resource. Every request MUST include the simulation session ID in the query parameter of the request
+  4. Get event ids for the requests that mutated the resource according to the `Events` section, using the header `X-Idabus-Event-Id` from the request responses
+  5. Check the event status using the event ids continuously until they are completed. Do not proceed to the next step until the events are completed.
+  6. Check or validate if the task requires it
+  7. Clean up by deleting the simulation session
+  - Read the `Simulation Sessions` section for details on how to work with simulation sessions.
+  - Read the `Events` section for how to get event ids and check event status.
+  - Never claim a mutation task is done before mutating event completion has been confirmed and the simulation session has been deleted.
+
 - If the user asks to send email, use `scripts/send_email.py` instead of building an ad hoc mail sender. Supply recipients with repeated `--to` flags and attachments with repeated `--attachment` flags.
 
 ## XPath Search Checklist
@@ -111,19 +123,14 @@ python3 scripts/send_email.py --to team@example.com --subject "Release notes" --
 ## Simulation Sessions
 
 - For any task that creates, updates, or deletes Idabus resources, you MUST create a simulation session first unless the user explicitly says to modify real data.
-- You MUST include the simulation session ID on every Idabus request in that task, including all reads, writes, creations, deletions and validation checks.
-- For a task that includes any simulated action, use the same simulation session for every request in that task, including read requests, so all requests share the same simulated state and data.
+- You MUST include the simulation session ID as a query parameter on every Idabus request in that task, including all reads, writes, creations, deletions and validation checks.
+- For a task that includes any simulated action, use the same simulation session ID as a query parameter for every request in that task, including read requests, so all requests share the same simulated state and data.
 - It is a violation to create a simulation session and then omit the simulation session ID from any subsequent task request.
 - Before the first request of that task, create a simulation session with `create-simulation-session`.
 - Pass the created simulation session ID on every request in the task by using the endpoint parameter name defined in `references/api_spec.json`.
 - After the task finishes, delete the simulation session with `delete-simulation-session`.
 - For `delete-simulation-session`, you MUST supply `simulationSessionId` as the endpoint path parameter.
 - If a simulation session was created, cleanup is mandatory. You MUST attempt deletion even if intermediate requests fail, and MUST report cleanup success or failure.
-
-### Validate / check rsults in simulation sessions
-
-- If anything should be validated or checked in a simulation session after a resource change is made, you MUST get the event id of the change request according to the `Events` section and wait untile the event is completed - means, the event and all its child events have finished processing.
-- Validations or checks can only be done after the event, which changes the resources, is completed.
 
 ## Permission Checks
 
@@ -281,6 +288,20 @@ The request script:
   - `PostProcessingFailed`
   - `Canceled`
   - `ManuallyClosed`
+
+## SoD violation checks
+
+- Use the `ocgresultantrolerefs` attribute on person objects to check for SoD violations.
+- SoD violation means, that the resources in the `ocgresultantrolerefs` attribute are declared in one of the `ocgsod` objects as conflicting with each other. The `ocgsod` object has two attributes, `ocgconflictingobject1` and `ocgconflictingobject2`, which are references to the conflicting objects.
+- Follow this workflow to check SoD violations
+  1. Create simulation session. It is a violation to create a simulation session and then omit the simulation session ID from any subsequent task request.
+  2. Every subsequent request in the task MUST include the simulation session ID in the query parameter of the request, request without the simulation session ID is a violation.
+  3. Mutate the resources with the simulation session ID
+  4. Get the mutating event ids from the `X-Idabus-Event-Id` response header.
+  5. Check the status of the mutating events and wait for the mutating events to complete.
+  6. Do not proceed if the events have not finished processing.
+  7. Check for SoD violations.
+  8. Delete the simulation session.
 
 ## Resources
 
